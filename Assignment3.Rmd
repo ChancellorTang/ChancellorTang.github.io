@@ -78,7 +78,7 @@ names(df)[2] = "State"
 names(df)[3] = "Fips"
 names(df)[4] = "Cases"
 names(df)[5] = "Deaths"
-names(df)
+names(df) 
 ```
 
 7. Find the average number of cases per day. Find the maximum cases a day.  
