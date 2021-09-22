@@ -203,7 +203,8 @@ df$date = as.Date(df$date)</code></pre>
 <ul>
 <li>Use the below codes to create <code>month</code>, <code>weekday</code> and <code>monthday</code> variables</li>
 </ul>
-<pre class="r"><code>df$month = month(df$date)
+<pre class="r"><code>library(lubridate)
+df$month = month(df$date)
 
 # day of the week
 df$weekday = wday(df$date)
@@ -363,28 +364,28 @@ x%&gt;%sqrt%&gt;%log
 <li>Find the median cases by weekdays in Rhode Island in 2021</li>
 </ol>
 <pre class="r"><code>df %&gt;% 
-    filter(year(df$date)== 2021) %&gt;% 
+    filter(year(df$date)== 2021, state== &quot;RI&quot;) %&gt;% 
     group_by(weekend) %&gt;% 
     summarise(cases = median(positiveIncrease))</code></pre>
 <pre><code>## # A tibble: 2 x 2
 ##   weekend cases
 ##     &lt;dbl&gt; &lt;dbl&gt;
-## 1       0  950.
-## 2       1  866.</code></pre>
+## 1       0  474 
+## 2       1  600.</code></pre>
 <ol start="15" style="list-style-type: decimal">
 <li>Compare the median cases in Rhode Island in June, July, August and September.</li>
 </ol>
 <pre class="r"><code>df %&gt;% 
-    filter(month==6|month==7|month==8|month==9) %&gt;%
+    filter((month==6|month==7|month==8|month==9), state== &quot;RI&quot;) %&gt;%
     group_by(month) %&gt;% 
     summarise(cases = median(positiveIncrease))</code></pre>
 <pre><code>## # A tibble: 4 x 2
 ##   month cases
 ##   &lt;dbl&gt; &lt;dbl&gt;
-## 1     6  224.
-## 2     7  444 
-## 3     8  415 
-## 4     9  456.</code></pre>
+## 1     6   59 
+## 2     7   65 
+## 3     8   94 
+## 4     9  102.</code></pre>
 <hr />
 </div>
 <div id="combo-2-filter-group_by-summarise-arrange" class="section level4">

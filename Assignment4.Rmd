@@ -60,7 +60,7 @@ df$date = as.Date(df$date)
 - Use the below codes to create `month`, `weekday` and `monthday` variables
 
 ```{r}
-
+library(lubridate)
 df$month = month(df$date)
 
 # day of the week
@@ -218,7 +218,7 @@ df %>%
 
 ``` {r}
 df %>% 
-    filter(year(df$date)== 2021) %>% 
+    filter(year(df$date)== 2021, state== "RI") %>% 
     group_by(weekend) %>% 
     summarise(cases = median(positiveIncrease))
 ```
@@ -227,7 +227,7 @@ df %>%
 
 ``` {r}
 df %>% 
-    filter(month==6|month==7|month==8|month==9) %>%
+    filter((month==6|month==7|month==8|month==9), state== "RI") %>%
     group_by(month) %>% 
     summarise(cases = median(positiveIncrease))
 ```
