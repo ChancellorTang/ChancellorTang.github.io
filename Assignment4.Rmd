@@ -131,7 +131,7 @@ x%>%sqrt%>%sum
 x%>%sqrt%>%log
 
 # log base 2 of 16 (need new answer)
-log(16, 2)
+16 %>% log2() 
 
 
 ```
@@ -242,6 +242,6 @@ Use the arrange function to find a month that has the highest number of deaths o
 df %>% 
   filter(weekend == 1) %>% 
   group_by(month) %>% 
-  summarise(weekend_deaths = sum(death)) %>% 
+  summarise(weekend_deaths = sum(death, na.rm = TRUE)) %>% 
   arrange(-weekend_deaths)
 ```

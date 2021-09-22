@@ -257,7 +257,7 @@ x%&gt;%sqrt%&gt;%sum
 x%&gt;%sqrt%&gt;%log
 
 # log base 2 of 16 (need new answer)
-log(16, 2)</code></pre>
+16 %&gt;% log2() </code></pre>
 <hr />
 </div>
 <div id="combo-1-group_by-summarise" class="section level4">
@@ -393,23 +393,23 @@ log(16, 2)</code></pre>
 <pre class="r"><code>df %&gt;% 
   filter(weekend == 1) %&gt;% 
   group_by(month) %&gt;% 
-  summarise(weekend_deaths = sum(death)) %&gt;% 
+  summarise(weekend_deaths = sum(death, na.rm = TRUE)) %&gt;% 
   arrange(-weekend_deaths)</code></pre>
 <pre><code>## # A tibble: 12 x 2
 ##    month weekend_deaths
 ##    &lt;dbl&gt;          &lt;dbl&gt;
-##  1    12        2393017
-##  2    11        2171016
-##  3    10        1896303
-##  4     8        1613606
-##  5     9        1511265
-##  6     7        1043286
-##  7     6         903940
-##  8     5         839843
-##  9     1             NA
-## 10     2             NA
-## 11     3             NA
-## 12     4             NA</code></pre>
+##  1     1        3870857
+##  2     2        3839562
+##  3    12        2393017
+##  4    11        2171016
+##  5    10        1896303
+##  6     8        1613606
+##  7     9        1511265
+##  8     7        1043286
+##  9     3        1035656
+## 10     6         903940
+## 11     5         839843
+## 12     4         242665</code></pre>
 </div>
 
 
