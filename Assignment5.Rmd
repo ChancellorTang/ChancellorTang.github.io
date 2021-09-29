@@ -128,5 +128,5 @@ table(d$TRAV_SP)
 d$TRAV_SP <- na_if(na_if(d$TRAV_SP, 999), 998)
 avg_speed <- mean(d$TRAV_SP, na.rm = TRUE)
 d$TRAV_SP <- replace_na(d$TRAV_SP, avg_speed)
-d$TRAV_SP
+table(d$TRAV_SP)
 ```
