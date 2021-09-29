@@ -112,9 +112,9 @@ df %>% group_by(Age1) %>% summarize(totalSurvivors = sum(Survived))
 9.  This dataset ([link](data/Vehicle.CSV)) records the vehicles in car accident in 2019. The variable information can be found at [this link.](data/Fatality Analysis Reporting System (FARS) Analytical User’s Manual, 1975-2019.pdf) Import the data using `read_csv`. Let `d` be the data containing only accidents happened in Rhode Island.  Is there any missing values in `d`? 
 
 ```{r}
-d = read_csv('https://bryantstats.github.io/math421/slides/car.csv')
+d = read_csv('https://bryantstats.github.io/math421/data/Vehicle.CSV')
 sum(is.na(d))
-d = d %>% filter(STATE == "Rhode Island")
+d = d %>% filter(STATENAME == "Rhode Island")
 sum(is.na(d))
 head(d)
 ```
@@ -125,8 +125,7 @@ head(d)
 
 ``` {r}
 table(d$TRAV_SP)
-d$TRAV_SP <- na_if(na_if(d$TRAV_SP, "Unknown"), "Not Rep")
-d$TRAV_SP <- as.numeric(gsub("([0-9]+).*$", "\\1", d$TRAV_SP))
+d$TRAV_SP <- na_if(na_if(d$TRAV_SP, 999), 998)
 avg_speed <- mean(d$TRAV_SP, na.rm = TRUE)
 d$TRAV_SP <- replace_na(d$TRAV_SP, avg_speed)
 d$TRAV_SP

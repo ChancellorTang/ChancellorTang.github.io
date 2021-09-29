@@ -253,58 +253,51 @@ df %&gt;% group_by(Age1) %&gt;% summarize(totalSurvivors = sum(Survived))</code>
 <ol start="9" style="list-style-type: decimal">
 <li>This dataset (<a href="data/Vehicle.CSV">link</a>) records the vehicles in car accident in 2019. The variable information can be found at <a href="data/Fatality%20Analysis%20Reporting%20System%20(FARS)%20Analytical%20User’s%20Manual,%201975-2019.pdf">this link.</a> Import the data using <code>read_csv</code>. Let <code>d</code> be the data containing only accidents happened in Rhode Island. Is there any missing values in <code>d</code>?</li>
 </ol>
-<pre class="r"><code>d = read_csv(&#39;https://bryantstats.github.io/math421/slides/car.csv&#39;)
+<pre class="r"><code>d = read_csv(&#39;https://bryantstats.github.io/math421/data/Vehicle.CSV&#39;)
 sum(is.na(d))</code></pre>
-<pre><code>## [1] 37320</code></pre>
-<pre class="r"><code>d = d %&gt;% filter(STATE == &quot;Rhode Island&quot;)
+<pre><code>## Warning: One or more parsing issues, see `problems()` for details</code></pre>
+<pre><code>## [1] 318</code></pre>
+<pre class="r"><code>d = d %&gt;% filter(STATENAME == &quot;Rhode Island&quot;)
 sum(is.na(d))</code></pre>
-<pre><code>## [1] 45</code></pre>
+<pre><code>## [1] 0</code></pre>
 <pre class="r"><code>head(d)</code></pre>
-<pre><code>## # A tibble: 6 x 28
-##   STATE        ST_CASE VEH_NO PER_NO COUNTY   DAY MONTH  HOUR MINUTE AGE   SEX  
-##   &lt;chr&gt;          &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;
-## 1 Rhode Island  440001      1      1      7     8 Janu~     2     22 23    Fema~
-## 2 Rhode Island  440002      1      1      9    15 Janu~    19      2 38    Male 
-## 3 Rhode Island  440003      1      1      7    26 Janu~     9     45 69    Male 
-## 4 Rhode Island  440004      1      1      7     8 March     1      4 33    Male 
-## 5 Rhode Island  440004      1      2      7     8 March     1      4 43    Male 
-## 6 Rhode Island  440004      2      1      7     8 March     1      4 23    Male 
-## # ... with 17 more variables: PER_TYP &lt;chr&gt;, INJ_SEV &lt;chr&gt;, SEAT_POS &lt;chr&gt;,
-## #   DRINKING &lt;chr&gt;, YEAR &lt;dbl&gt;, MAN_COLL &lt;chr&gt;, OWNER &lt;chr&gt;, MOD_YEAR &lt;chr&gt;,
-## #   TRAV_SP &lt;chr&gt;, DEFORMED &lt;chr&gt;, DAY_WEEK &lt;chr&gt;, ROUTE &lt;chr&gt;, LATITUDE &lt;dbl&gt;,
-## #   LONGITUD &lt;dbl&gt;, HARM_EV &lt;chr&gt;, LGT_COND &lt;chr&gt;, WEATHER &lt;chr&gt;</code></pre>
+<pre><code>## # A tibble: 6 x 203
+##   STATE STATENAME    ST_CASE VEH_NO VE_FORMS NUMOCCS NUMOCCSNAME   DAY DAYNAME
+##   &lt;dbl&gt; &lt;chr&gt;          &lt;dbl&gt;  &lt;dbl&gt;    &lt;dbl&gt;   &lt;dbl&gt; &lt;chr&gt;       &lt;dbl&gt;   &lt;dbl&gt;
+## 1    44 Rhode Island  440001      1        3       2 02              1       1
+## 2    44 Rhode Island  440001      2        3       1 01              1       1
+## 3    44 Rhode Island  440001      3        3       3 03              1       1
+## 4    44 Rhode Island  440002      1        2       1 01              2       2
+## 5    44 Rhode Island  440002      2        2       2 02              2       2
+## 6    44 Rhode Island  440003      1        1       1 01              7       7
+## # ... with 194 more variables: MONTH &lt;dbl&gt;, MONTHNAME &lt;chr&gt;, HOUR &lt;dbl&gt;,
+## #   HOURNAME &lt;chr&gt;, MINUTE &lt;dbl&gt;, MINUTENAME &lt;chr&gt;, HARM_EV &lt;dbl&gt;,
+## #   HARM_EVNAME &lt;chr&gt;, MAN_COLL &lt;dbl&gt;, MAN_COLLNAME &lt;chr&gt;, UNITTYPE &lt;dbl&gt;,
+## #   UNITTYPENAME &lt;chr&gt;, HIT_RUN &lt;dbl&gt;, HIT_RUNNAME &lt;chr&gt;, REG_STAT &lt;dbl&gt;,
+## #   REG_STATNAME &lt;chr&gt;, OWNER &lt;dbl&gt;, OWNERNAME &lt;chr&gt;, MAKE &lt;dbl&gt;,
+## #   MAKENAME &lt;chr&gt;, MODEL &lt;dbl&gt;, MAK_MOD &lt;dbl&gt;, MAK_MODNAME &lt;chr&gt;,
+## #   BODY_TYP &lt;dbl&gt;, BODY_TYPNAME &lt;chr&gt;, MOD_YEAR &lt;dbl&gt;, MOD_YEARNAME &lt;chr&gt;, ...</code></pre>
 <hr />
 <ol start="10" style="list-style-type: decimal">
 <li>Continue with the dataset <code>d</code> in Question 9. We will analyze the traveling speed variable (<code>TRAV_SP</code>). This variable records the travel speeds (miles per hours) when the accident happened. Use the <code>table</code> function to check all the values of this variable. Do you observe any unexpected values? These unexpected values are actually the codes for missing values. Use the <code>na_if</code> function to changes the unexpected values to <code>NA</code>. Then replace the NAs by the average speed.</li>
 </ol>
 <pre class="r"><code>table(d$TRAV_SP)</code></pre>
 <pre><code>## 
-## 011 MPH 013 MPH 024 MPH 030 MPH 032 MPH 046 MPH 055 MPH 056 MPH 057 MPH 058 MPH 
-##       4       1       2       2       1       3       1       1       1       1 
-## 060 MPH 068 MPH 072 MPH 075 MPH 079 MPH 080 MPH 081 MPH 087 MPH 093 MPH Not Rep 
-##       1       2       1       2       4       1       1       2       3      17 
-## Stopped Unknown 
-##       1      49</code></pre>
-<pre class="r"><code>d$TRAV_SP &lt;- na_if(na_if(d$TRAV_SP, &quot;Unknown&quot;), &quot;Not Rep&quot;)
-d$TRAV_SP &lt;- as.numeric(gsub(&quot;([0-9]+).*$&quot;, &quot;\\1&quot;, d$TRAV_SP))</code></pre>
-<pre><code>## Warning: NAs introduced by coercion</code></pre>
-<pre class="r"><code>avg_speed &lt;- mean(d$TRAV_SP, na.rm = TRUE)
+##   0   5  18  25  31  32  33  38  39  43  45  50  51  55  57  60  61  64  65  66 
+##   5   1   1   2   1   2   1   1   1   1   3   1   1   2   1   1   1   1   1   1 
+##  67  70  71  76  79  80 100 105 117 998 999 
+##   1   1   2   1   1   1   2   1   1  22  12</code></pre>
+<pre class="r"><code>d$TRAV_SP &lt;- na_if(na_if(d$TRAV_SP, 999), 998)
+avg_speed &lt;- mean(d$TRAV_SP, na.rm = TRUE)
 d$TRAV_SP &lt;- replace_na(d$TRAV_SP, avg_speed)
 d$TRAV_SP</code></pre>
-<pre><code>##   [1] 75.00000 80.00000 56.14706 56.14706 56.14706 56.14706 56.14706 56.14706
-##   [9] 56.14706 56.14706 56.14706 56.14706 24.00000 24.00000 79.00000 79.00000
-##  [17] 79.00000 79.00000 56.14706 56.14706 56.14706 56.14706 56.14706 56.14706
-##  [25] 56.14706 56.14706 56.14706 56.14706 56.14706 46.00000 56.14706 56.14706
-##  [33] 56.14706 56.14706 56.14706 56.14706 56.14706 60.00000 56.14706 56.14706
-##  [41] 56.14706 56.14706 56.14706 56.14706 56.14706 56.14706 56.14706 56.14706
-##  [49] 56.14706 56.14706 75.00000 56.14706 56.00000 56.14706 56.14706 56.14706
-##  [57] 56.14706 56.14706 56.14706 58.00000 11.00000 11.00000 11.00000 11.00000
-##  [65] 46.00000 46.00000 56.14706 56.14706 56.14706 56.14706 56.14706 13.00000
-##  [73] 81.00000 56.14706 68.00000 68.00000 72.00000 87.00000 87.00000 32.00000
-##  [81] 56.14706 56.14706 56.14706 56.14706 93.00000 93.00000 93.00000 56.14706
-##  [89] 56.14706 56.14706 56.14706 56.14706 56.14706 55.00000 56.14706 56.14706
-##  [97] 56.14706 30.00000 56.14706 56.14706 56.14706 56.14706 56.14706 56.14706
-## [105] 56.14706 56.14706 56.14706 56.14706 30.00000 57.00000</code></pre>
+<pre><code>##  [1]  79.0  43.0  25.0  49.4  76.0  49.4  65.0 117.0  51.0  49.4  49.4  31.0
+## [13]  45.0   0.0   0.0   0.0  71.0  49.4  49.4 105.0  49.4  49.4  45.0  45.0
+## [25]  49.4  66.0  49.4  55.0  39.0  71.0  49.4  49.4  49.4   0.0  33.0  18.0
+## [37]  49.4  60.0  49.4  32.0  80.0  49.4  49.4   5.0  57.0  49.4  25.0  49.4
+## [49]  49.4  49.4  49.4  55.0 100.0  49.4  49.4  49.4  61.0 100.0  70.0  49.4
+## [61]  49.4  67.0  49.4  49.4  64.0  49.4  49.4  38.0  32.0  49.4  49.4  50.0
+## [73]   0.0  49.4</code></pre>
 
 
 
