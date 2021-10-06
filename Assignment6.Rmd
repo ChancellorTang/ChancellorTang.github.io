@@ -157,14 +157,14 @@ Do the follows.
 
 - Use `geom_point` to compare the popularity of all vaccines by date. 
 ``` {r}
-df1 <- df %>% filter(Vaccine_Type != "All") %>% group_by(Date, Vaccine_Type) %>% summarise(vac_admin=sum(Doses_admin, na.rm=TRUE))
+df1 <- df %>% filter(Vaccine_Type != "All") %>% group_by(Date, Vaccine_Type) %>% summarise(vac_admin=mean(Doses_admin, na.rm=TRUE))
 
 df1 %>% ggplot()+geom_point(mapping = aes(x = Date, y = vac_admin, color = Vaccine_Type))
 ```
 
 - Use `geom_line` to compare the popularity of all vaccines in New England by date.
 ``` {r}
-df2 <- df %>% filter(Province_State %in% c('Massachusetts','Connecticut', 'Rhode Island', 'Maine', 'Vermont', 'New Hampshire'), Vaccine_Type != "All") %>% group_by(Date, Vaccine_Type) %>% summarise(vac_admin=sum(Doses_admin, na.rm=TRUE))
+df2 <- df %>% filter(Province_State %in% c('Massachusetts','Connecticut', 'Rhode Island', 'Maine', 'Vermont', 'New Hampshire'), Vaccine_Type != "All") %>% group_by(Date, Vaccine_Type) %>% summarise(vac_admin=mean(Doses_admin, na.rm=TRUE))
 
 df2 %>%  ggplot()+geom_line(mapping = aes(x = Date, y = vac_admin, color = Vaccine_Type))
 
@@ -175,14 +175,14 @@ df2 %>%  ggplot()+geom_line(mapping = aes(x = Date, y = vac_admin, color = Vacci
 
 df$Month = factor(months(df$Date))
 
-df3 <- df %>% filter(Province_State %in% c('Massachusetts','Connecticut', 'Rhode Island', 'Maine', 'Vermont', 'New Hampshire'), Vaccine_Type != "All") %>% group_by(Month, Province_State) %>% summarise(vac_admin=sum(Doses_admin, na.rm=TRUE))
+df3 <- df %>% filter(Province_State %in% c('Massachusetts','Connecticut', 'Rhode Island', 'Maine', 'Vermont', 'New Hampshire'), Vaccine_Type != "All") %>% group_by(Month, Province_State) %>% summarise(vac_admin=mean(Doses_admin, na.rm=TRUE))
 
 df3 %>%  ggplot()+geom_col(mapping = aes(x = Month, y = vac_admin, fill = Province_State))
 ```
 
 - Use `geom_line` to compare states in New England in term of the total vaccine administered by date. 
 ```{r}
-df4 <- df %>% filter(Province_State %in% c('Massachusetts','Connecticut', 'Rhode Island', 'Maine', 'Vermont', 'New Hampshire'), Vaccine_Type != "All") %>% group_by(Date, Province_State) %>% summarise(vac_admin=sum(Doses_admin, na.rm=TRUE))
+df4 <- df %>% filter(Province_State %in% c('Massachusetts','Connecticut', 'Rhode Island', 'Maine', 'Vermont', 'New Hampshire'), Vaccine_Type != "All") %>% group_by(Date, Province_State) %>% summarise(vac_admin=mean(Doses_admin, na.rm=TRUE))
 
 df4 %>%  ggplot()+geom_line(mapping = aes(x = Date, y = vac_admin, color = Province_State)) 
 ```
