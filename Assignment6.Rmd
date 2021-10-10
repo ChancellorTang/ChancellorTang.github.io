@@ -173,7 +173,7 @@ df2 %>%  ggplot()+geom_line(mapping = aes(x = Date, y = vac_admin, color = Vacci
 - Use `geom_line` to compare the popularity of all vaccines in New England by month.
 ```{r}
 library(lubridate)
-df$Month = factor(month(df$Date))
+df$Month <- factor(month(df$Date, label = TRUE))
 
 df3 <- df %>% filter(Province_State %in% c('Massachusetts','Connecticut', 'Rhode Island', 'Maine', 'Vermont', 'New Hampshire'), Vaccine_Type != "All") %>% group_by(Month, Province_State) %>% summarise(vac_admin=mean(Doses_admin, na.rm=TRUE))
 
