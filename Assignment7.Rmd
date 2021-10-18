@@ -143,17 +143,59 @@ df$day <- wday(df$Date)
 
  - geom_line
 ```{r}
-df5 <- df %>% filter( Vaccine_Type != "All") %>% group_by(day, Province_State) %>% summarise(vac_admin=mean(Doses_admin, na.rm=TRUE))
+df5 <- df %>% filter( Vaccine_Type != "All", Province_State %in%  c("New York")) %>% group_by(Date) %>% summarise(vac_admin=mean(Doses_admin, na.rm=TRUE))
 
-  df %>%  ggplot()+geom_line(mapping = aes(x = day, y = vac_admin)) +
-  labs(x='Doses Shipped', 
+  df5 %>%  ggplot()+geom_line(mapping = aes(x = Date, y = vac_admin)) +
+  labs(x='Date', 
        y = 'Total Vaccines Admin',
-       title = 'Allocated and Administered Vaccines', 
-       caption = 'All the graphs follow the same trends, with MA having the most administered vaccines')
+       title = 'Total Administered Vaccines', 
+       caption = 'The number of administered vaccines has gone up over time, peaking in April')
 ```
 
  - geom_smooth
+```{r}
+df %>% filter(Vaccine_Type != "All") %>% ggplot(mapping = aes(x = Doses_shipped, y = Doses_admin))+geom_smooth() +
+  labs(x='Vaccines Shipped', 
+       y = 'Total Vaccines Admin',
+       title = 'Total Shipped and Administered Vaccines', 
+       caption = 'There is no variation in this smooth line, which means there is an unusually high correlation between shipped and administered vaccines')
+```
+ 
  _ geom_bar
+``` {r}
+df %>% filter(Vaccine_Type != "All") %>% ggplot()+ geom_bar(mapping=aes(x=quarters, fill = quarters)) + labs(x='Quarters',
+       y = 'Total Vaccines Admin',
+       title = 'Total Administered Vaccines by Quarter', 
+       caption = 'Quarter 4 has the least amount of administered vaccines')
+```
+
  - geom_col
+```{r} 
+df %>% filter(Vaccine_Type != "All") %>% ggplot()+geom_col(mapping = aes(x = day, y = Doses_admin, fill = day)) + labs(x='Weekday', 
+       y = 'Total Vaccines Admin',
+       title = 'Total Administered Vaccines by Weekday', 
+       caption = 'There is little variation between weekday and Vaccines administered')
+```
+
  - face_wrap
+``` {r}
+df %>% filter(Province_State %in% c('Massachusetts','Connecticut', 'Rhode Island', 'Maine', 'Vermont', 'New Hampshire'), Vaccine_Type != "All") %>% ggplot(mapping=aes(x=quarters, y = Doses_admin, fill = quarters))+
+geom_col()+facet_wrap(~Province_State) + labs(x='Quarters', 
+       y = 'Total Vaccines Admin',
+       title = 'Total Administered Vaccines by Quarter in New England', 
+       caption = 'The quarters trend in the same way, but Massachusetts has the most vaccines administered for each quarter')
+```
+ 
  - combination of geom_point and geom_smooth 
+ 
+``` {r}
+ df %>% filter(Province_State %in% c("Massachusetts", "Connecticut")) %>% 
+  ggplot(mapping=aes(x=Doses_shipped, y=Doses_alloc))+ 
+  geom_point()+
+  geom_smooth() + xlim(0, 1550000)+
+  labs(x='Doses Shipped', 
+       y = 'Total Vaccines Admin',
+       title = 'Total Shipped and Administered Vaccines MA and CT', 
+       caption = 'When 500000 doses are shipped to MA and CT, there is a lower number of vaccines administered')
+```
+ 
