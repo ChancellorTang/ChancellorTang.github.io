@@ -15,3 +15,5 @@
 [Click here to go to my Assignment 6](Assignment6.html) 
 
 [Click here to go to my Assignment 7](Assignment7.html) 
+
+[Click here to go to my Assignment 8](Assignment8.html) 
