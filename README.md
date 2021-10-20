@@ -17,3 +17,7 @@
 [Click here to go to my Assignment 7](Assignment7.html) 
 
 [Click here to go to my Assignment 8](Assignment8.html) 
+
+[Click here to go to my Assignment 9](Assignment9.html) 
+
+[Click here to go to my Assignment 9 Extra Credit](Assignment9-EC.html) 
