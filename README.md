@@ -23,3 +23,9 @@
 [Click here to go to my Assignment 9 Extra Credit](Assignment9-EC.html) 
 
 [Click here to go to my Assignment 10](Assignment10.html) 
+
+[Click here to go to my Assignment 10 Extra Credit](Assignment10-EC.html) 
+
+[Click here to go to my Assignment 11](Assignment11.html) 
+
+[Click here to go to my Assignment 12](Assignment12.html) 
