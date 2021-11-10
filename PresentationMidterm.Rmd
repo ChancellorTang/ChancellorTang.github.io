@@ -102,3 +102,10 @@ knitr::opts_chunk$set(echo = FALSE)
 
 
 ![](model_comp1.png)
+
+## Challenges
+
+- Changing variables into factors
+- Lack of some variables
+  - Service was no longer useful
+
