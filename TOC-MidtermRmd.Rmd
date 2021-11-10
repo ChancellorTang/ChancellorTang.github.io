@@ -1,0 +1,481 @@
+
+---
+title: "Fall 2021 - Math 421 - Midterm"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+    theme: united
+  word_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+---
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+## Instruction
+
+The midterm has two components: the Rmarkdown notebook (html) and the presentation.  We will do the presentation in class. Post both the notebook and the presentation on your Github page. 
+
+**The notebook:** The notebook should be created using `rmarkdown` (like other assignments). The notebook should have a title. It should have a table of content (TOC form) or in a tab form. Here are the samples Rmarkdown for [TOC form](fa2021_midterm_toc.Rmd) and [tab form](fa2021_midterm_tab.Rmd)
+
+
+**The Presentation:** Present your results in 5-10 minutes. To make the presentation using Rmarkdown, do the follows: 
+
+    - In Rstudio -> File -> New File -> R markdown
+    
+    - In the left panel, click to Presentation -> Click OK
+    
+    - Now you have an Rmarkdown that can be knitted to be a html presentation 
+    
+- You can also use borrow a template of our class slides presentations. For example, [this slide](https://bryantstats.github.io/math421/slides/6_viz_fa21_2.html) has this [Rmarkdown](https://bryantstats.github.io/math421/slides/6_viz_fa21_2.Rmd)    
+    
+- You do not need to rerun all the codes for the presentation. For example, to show the model comparison, you just need to show the image of the model comparison instead of running all the models again.
+    
+- To inset an image in a slide, use  `![](image.png)`
+
+- To turn off message and warning of a code cell, use:  `{r, message=FALSE, warning=FALSE}` for the cell. 
+
+**What to present**:
+
+  - Present Part 2 - Visualization
+  
+  - Present Question Question 4, 5 and 6 in Part 3.  
+  
+  - Present any errors/challenges you run into and how you fix/overcome them. 
+
+**Data:**  
+
+The data for the mid-term project is the Rhode Island Department of Health Hospital Discharge Data.  Each row of the data presents a patient. 
+
+Link: https://drive.google.com/open?id=15QNBf6YYKocK2nNIfpKDer58kQnCPNZJ 
+
+-------
+
+## I. Data Wranggling
+
+1. Download the data file `hdd0318cy.sas7bdat`.  
+
+2. Use `read_sas` in library `haven` to read the data. 
+```{r}
+library(haven)
+df = read_sas('hdd0318cy.sas7bdat')
+```
+    
+3. Filter the data to have only patients of the year 2018 (`yod==2018`)
+
+```{r}
+library(tidyverse)
+df18 = df %>% filter(yod==18)
+```
+    
+4. Select to work with only following variables: 
+
+```{r, eval=FALSE}
+df18 <- df18 %>% 
+  select(c("yod", "payfix","pay_ub92","age", "sex","raceethn","provider","moa", "yoa","mod","admtype", "asource" , "preopday" ,"los", "service" , "icu","ccu",  "dispub92", "payer"  ,"drg","trandb", "randbg","randbs","orr", "anes","seq", "lab","dtest", "ther","blood","phar", "other","patcon","bwght","total","tot" ,  "ecodub92","b_wt","pt_state","diag_adm","ancilar" , "campus","er_fee","er_chrg","er_mode","obs_chrg",            "obs_hour", "psycchrg","nicu_day"))
+```
+ 
+
+*Notice*:  You may want to save the current data to your computer for easy access later.  To save the data file use `write_csv(df, 'midterm.csv')`, for example.  
+
+5. What are variables that have missing values?
+```{r}
+colSums(is.na(df18))
+```
+ 
+6. Remove all variables with missing values
+```{r}
+df18$payfix = NULL
+df18$preopday = NULL
+df18$obs_hour = NULL
+df18$nicu_day = NULL
+```
+ 
+7. Refer to the data description in the file `HDD2015-18cy6-20-19.docx`, which variable recording the month of admission?, which variable recording the month of discharge?
+
+- "moa" is month of admission
+- "mod" is month of departure
+
+8. Which month admitted the most number of patients? Which month admitted the most number of male patients?
+- October for both questions
+```{r}
+df18 %>% count(moa, sort = TRUE)
+```
+```{r}
+df18 %>% filter(sex == 1) %>% count(moa, sort = TRUE)
+```
+
+9. Which month has the most number of teenage female patients?
+- March
+```{r}
+df18%>% filter(sex == 2, age < 20, age >=13)  %>% count(moa, sort = TRUE)
+```
+
+10. Which provider has the most number of female patients in October? 
+- Rhode Island Hospital (7205)
+```{r}
+df18 %>% filter(sex == 2, moa == 10) %>% count(provider, sort = TRUE)
+```
+
+11. Is female patients older than male patients, on average? 
+
+ - No, on average, women are slightly younger than men admitted
+```{r}
+df18 %>% filter(sex != 9)%>% group_by(sex) %>% summarize(avg_age = mean(age))
+```
+
+12. Calculate the average age of patients by months. Which month has the oldest patients on average age?
+  - January has the oldest average age
+```{r}
+ df18 %>% filter(sex != 9)%>% group_by(moa) %>% summarize(avg_age = mean(age)) %>% arrange(desc(avg_age))  
+```
+
+13. What is the name of the provider that has the highest total charge?
+ - Rhode Island Hospital (7205)
+```{r}
+df18 %>% group_by(provider) %>% summarize(total = sum(tot)) %>% arrange(desc(total))
+```
+
+14. What is the name of the provider that has the least total charge for teenage male on average?
+ - Roger Williams (7206)
+```{r}
+df18 %>% filter(sex == 1, age < 20, age >= 13) %>% group_by(provider) %>% summarize(total = mean(tot)) %>% arrange(total)
+```
+
+15. Create a season (Spring, Summer, Fall, Winter) variable. Calculate the length of stays by season. Which season has the longest length of stays on average?
+
+ - Summer
+```{r}
+df18 %>%  mutate(season = ifelse(moa %in% c(1,2,12), "Winter", ifelse(moa %in% c(3,4,5), "Spring", 
+                     ifelse(moa %in% c(6,7,8), "Summer", 
+                            ifelse(moa %in% c(9,10,11), "Fall", NA))))) %>% group_by(season) %>% summarize(avg_los = mean(los)) %>% arrange(desc(avg_los))
+```
+16. On average, how much a 20 year-old male white get charged for staying 1 day?
+ - $15,319.56
+```{r}
+df18 %>% filter(age == 20, sex == 1, raceethn == 1, los == 1) %>% summarize(avg_price =  mean(tot, na.rm = TRUE))
+```
+
+17. Write a paragraph to summarize the section and give your comments on the results. 
+
+October seems like a popular time for people to get admitted into hospitals. The most query was the one with the seasons and length of stay. The range of average length of stay is less than 0.1, which tells me that length of stay is universally around that range regardless of season. The highest total charge was made at Rhode Island Hospital for $1,788,373,499! I would want to look at the data for this hospital to see if that is sheerly because of the total people going here or the sevarity of the issues.
+
+-------
+
+## II. Data Visualization
+
+Continue with the data from part I. 
+
+1. Provides at least 10 meaningful plots. Comments on the plots. All plots should have title, caption, appropriate labels on x and y-axis
+```{r}
+library(ggplot2)
+graph1 = df18 %>% filter(sex != 9) %>% ggplot(mapping=aes(x=age, y=tot))+ geom_smooth()+facet_wrap(~sex) +   labs(x='Age', 
+       y = 'Total Cost',
+       title = 'Age and Cost by Sex', 
+       caption = 'Both sexs follow the same peaks around 12 and 65, but the men had the highest peaks between both sexs')
+ggsave(filename = 'graph1.png', plot = graph1)
+graph1
+
+```
+
+```{r}
+ graph2 = df18 %>% ggplot(mapping=aes(x=los, y=tot))+ geom_point()+   labs(x='Length of Stay', 
+       y = 'Total Cost',
+       title = 'Cost by Length of Stay', 
+       caption = 'A majority of the length of stays fall under 100 days, there is a positive correlation between length of stay and total cost')
+ggsave(filename = 'graph2.png', plot = graph2)
+graph2
+```
+```{r}
+df18$provider = factor(df18$provider)
+graph3 = df18 %>% ggplot()+geom_bar(mapping = aes(x = provider)) + labs(x='Hospital', 
+       y = 'Total Patients',
+       title = 'Total Admissions by Hospital', 
+       caption = 'Rhode Island Hosptial (7205) had the most hospital admissions in 2018. The next two hospitals with the most admissions was Miriam and Women and Infants.')
+ggsave(filename = 'graph3.png', plot = graph3)
+graph3
+```
+```{r}
+graph4 = df18 %>% filter(sex != 9, provider %in% c("7205", "7204", "7214")) %>%  ggplot() + geom_boxplot(mapping = aes(x = tot, y = provider)) + labs(x='Cost', 
+       y = 'Hospital',
+       title = 'Total Admissions by Hospital', 
+       caption = 'The top 3 hospitals have a lot of high outliers, implying that there is a left-skew to price. Rhode Island Hosptial has the highest mean cost.
+')
+ggsave(filename = 'graph4.png', plot = graph4)
+graph4
+```
+
+```{r}
+df18$in_state = ifelse(df18$pt_state == "RI", "1", "0")
+graph5 = df18 %>%  ggplot() + geom_bar(mapping = aes(x = provider, fill = in_state), position = 'fill') + labs(x='Hospital', 
+       y = '% of Patients',
+       title = 'In-state vs Out-of-State patients by Hospital', 
+       caption = '11 out of the 12 hospitals have greater than 75% of their patients coming from in state. The lowest one is Westerly Hospital, which borders CT.
+')
+ggsave(filename = 'graph5.png', plot = graph5)
+graph5
+```
+
+```{r}
+df18$sex = factor(df18$sex)
+graph6 = df18 %>% filter(sex != 9) %>% group_by(provider,sex) %>% summarize(avg_price = mean(tot)) %>% ggplot()+ geom_col(mapping=aes(x= provider, y=avg_price, fill=sex), position = 'dodge') + labs(x='Hospital', 
+       y = 'Average Cost',
+       title = 'Average Cost by Hospital by Sex', 
+       caption = 'For most hospitals, men pay more on average than women for visits. The most drastic difference in average cost is for Bradley, which is a psychiatric hospital for children')
+ggsave(filename = 'graph6.png', plot = graph6)
+graph6
+```
+```{r}
+df18$admtype = factor(df18$admtype)
+graph7 = df18 %>%  filter(provider == "7205") %>%ggplot() + geom_bar(mapping = aes(x = admtype)) + labs(x='Admission Type', 
+       y = 'Total Patients',
+       title = 'Rhode Island Hospital Regular Admissions', 
+       caption = 'The majority of admissions to Rhode Island Hospital were emergency shipments.')
+ggsave(filename = 'graph7.png', plot = graph7)
+graph7
+```
+```{r}
+graph8 = df18 %>%  filter(provider == "7205") %>%ggplot() + geom_col(mapping = aes(x = payer, y = tot)) + labs(x='payer', 
+       y = 'Total Patients',
+       title = 'Rhode Island Hospital Payers', 
+       caption = 'Most of the money for hospital visits to Rhode Island Hospital came from Medicare.')
+ggsave(filename = 'graph8.png', plot = graph8)
+graph8
+```
+
+```{r}
+df18$sex = factor(df18$sex)
+graph9 = df18 %>% group_by(provider) %>% summarize(avg_los = mean(los)) %>% ggplot()+ geom_col(mapping=aes(x= provider, y=avg_los)) + labs(x='Hospital', 
+       y = 'Average Length of Stay',
+       title = 'Average Length of Stay by Hospital', 
+       caption = 'Bradley has the longest average length of stay with over 20 day per visit')
+ggsave(filename = 'graph9.png', plot = graph9)
+graph9
+```
+```{r}
+df18$er_mode = factor(df18$er_mode)
+graph10 = df18 %>%  filter(provider == "7205", er_chrg>0) %>%ggplot() + geom_bar(mapping = aes(x = er_mode)) + labs(x='ER Admisson Type', 
+       y = 'Total Patients',
+       title = 'Rhode Island Hospital ER Admissions', 
+       caption = 'The majority of ER admissions at Rhode Island Hospital were admitted by an ambulance.')
+
+ggsave(filename = 'graph10.png', plot = graph10)
+graph10
+```
+2. Make an animation plot. 
+```{r}
+library(gganimate)
+library(ggplot2)
+
+animate_graph = df18 %>% filter(provider %in% c("7205", "7204", "7214")) %>%  group_by(moa, provider) %>% summarize(avg_cost = mean(tot))  %>% ggplot(aes(x = moa, y = avg_cost, color = provider)) + geom_line()+ transition_reveal(moa)
+
+ggsave(filename = 'animate_graph.png', plot = animate_graph)
+animate_graph
+
+```
+
+3. Write a paragraph to summarize the section and give your comments on the results. 
+
+The dynamic of the hospitals in Rhode Island is full of interesting information. I first looked at the cost of visits by age and sex of the patients in 2018, and I saw that both had peaks around the ages of 12 and 65. Mainly, I looked at hospital provider. The issue with the way the data classifies the provider is that when R reads them in, they see the numbers as numeric values rather than classification. To solve this, I had to make providers factor variables. Rhode Island Hospital had the most patients admitted with over 35000 admissions. The next largest hospital did not break 20000. On of the most interesting graphs I made was to compare the amount of in-state and out-of-state patients for each hospital. I found that Westerly Hospital had a lower percent of in-state patients by a wide margin. This is probably because it borders CT, so more CT people go there if it’s closer instead of further ones in CT. I wanted to look at service as a feature, but there were mostly 00, which means they have no classification for service.
+
+-------
+
+## III. Predictive Models
+
+Continue with the data from part I. Use the follows as the target and input variables: 
+
+*Target Variable*: Create the target variable taking value of 
+
+  - `low` if the total charge of a patient (`tot`) is smaller than the median of the total charge, and
+
+  - `high` otherwise. 
+```{r}
+med_tot = median(df18$tot)
+df18$target = ifelse(df18$tot < med_tot, "low", "high")
+```
+  
+*Input Variables*:
+
+  - "age","sex","raceethn","provider","moa","mod","admtype","campus", 'los'
+  
+```{r}
+df18_var = df18[,c("age","sex","raceethn","provider","moa","mod","admtype","campus", 'los', "target")]
+```
+  
+-------
+
+1. Use `filter` function to filter out rows where `raceethn==''` or `admtype==''`. Make sure all the categorical variables are factor, numeric variables are numeric. Set Training : Testing Split = 10 : 90 
+```{r}
+df18_var$sex = factor(df18_var$sex)
+df18_var$provider = factor(df18_var$provider)
+df18_var$raceethn = factor(df18_var$raceethn)
+df18_var$admtype = factor(df18_var$campus)
+df18_var$target = factor(df18_var$target)
+df18_var$moa = factor(df18_var$moa)
+df18_var$mod = factor(df18_var$mod)
+df18_var = df18_var %>% filter(raceethn != "", admtype!='')
+
+library(caret)
+set.seed(2020)
+splitIndex <- createDataPartition(df18_var$target, p = .10, list = FALSE)
+df_train <- df18_var[ splitIndex,]
+df_test <- df18_var[-splitIndex,]
+```
+
+2. Train a decision tree using `rpart`.  Plot the decision tree. Plot the variable importance ranked by the tree. 
+``` {r}
+library(rpart) 
+tree_model <- rpart(target ~ ., data = df_train)
+barplot(tree_model$variable.importance)
+```
+
+3. Using caret for this question. Set `Training Control` to be: Use Cross-Validation of 5 folds across all models.  Train & tune at least 3 different models (i.e. three different values for `method=` in the train function of caret).  Plot the hyper-parameter tuning plots for each model. 
+```{r}
+trControl = trainControl(method = "cv",
+                         number = 5)
+
+tuneTree = expand.grid(maxdepth = 2:4)
+
+tree <- train(target~., data=df_train, 
+                                method = "rpart2", 
+                                trControl = trControl,
+              tuneGrid = tuneTree)
+
+tuneForest = expand.grid(mtry = 2:4,
+                       splitrule = c('gini'),
+                       min.node.size = c(1:10))
+
+forest_ranger <- train(target~., data=df_train, 
+                    method = "ranger", 
+                                trControl = trControl,
+                    tuneGrid = tuneForest)
+
+tuneKNN = expand.grid(k = 5:8)
+
+knn <- train(target~., data=df_train, 
+                                method = "knn", 
+                                trControl = trControl,
+                                tuneGrid= tuneKNN)
+
+results <- resamples(list('Decision Tree' = tree,
+                          'Random Forest' = forest_ranger,
+                          'knn'= knn))
+```
+
+```{r}
+plot(tree)
+plot(forest_ranger)
+plot(knn)
+```
+
+4. Plot the comparison of the models in 3. 
+``` {r}
+bwplot1 = bwplot(results)
+bwplot1
+```
+The random forest has the highest mean value for accuracy and kappa. This is the modelthat I will use for the final prediction.
+
+5. What is your final selection for the model? Test the accuracy of your final model on the test data. 
+
+```{r}
+pred <- predict(forest_ranger, df_test)
+#Evaluate the predictions
+cm <- confusionMatrix(data = pred, reference = df_test$target, positive = "low")
+cm$overall[1]
+```
+
+6. Create another `target` variable (binary), decide the input variables and redo 1 to 5. 
+```{r}
+df18_var1 = df18[,c("age","sex","raceethn","provider","moa","mod","admtype","campus", 'los', "tot")]
+```
+  
+-------
+
+1.
+```{r}
+df18_var1$provider = factor(df18_var1$provider)
+df18_var1$raceethn = factor(df18_var1$raceethn)
+df18_var1$admtype = factor(df18_var1$campus)
+df18_var1$moa = factor(df18_var1$moa)
+df18_var1$mod = factor(df18_var1$mod)
+df18_var1 = df18_var1 %>% filter(raceethn != "", admtype!='', sex != "9")
+df18_var1$sex = factor(df18_var1$sex)
+
+library(caret)
+set.seed(2020)
+splitIndex <- createDataPartition(df18_var1$sex, p = .10, list = FALSE)
+df_train <- df18_var[ splitIndex,]
+df_test <- df18_var[-splitIndex,]
+```
+
+    2.
+``` {r}
+library(rpart) 
+tree_model <- rpart(sex ~ ., data = df_train)
+barplot(tree_model$variable.importance)
+```
+
+    3.
+```{r}
+trControl = trainControl(method = "cv",
+                         number = 5)
+
+tuneTree = expand.grid(maxdepth = 2:4)
+
+tree1 <- train(sex~., data=df_train, 
+                                method = "rpart2", 
+                                trControl = trControl,
+              tuneGrid = tuneTree)
+
+tuneForest = expand.grid(mtry = 2:4,
+                       splitrule = c('gini'),
+                       min.node.size = c(1:10))
+
+forest_ranger1 <- train(sex~., data=df_train, 
+                    method = "ranger", 
+                                trControl = trControl,
+                    tuneGrid = tuneForest)
+
+tuneKNN = expand.grid(k = 5:8)
+
+knn1 <- train(sex~., data=df_train, 
+                                method = "knn", 
+                                trControl = trControl,
+                                tuneGrid= tuneKNN)
+
+results1 <- resamples(list('Decision Tree' = tree1,
+                          'Random Forest' = forest_ranger1,
+                          'knn'= knn1))
+```
+
+```{r}
+plot(tree1)
+plot(forest_ranger1)
+plot(knn1)
+```
+
+    4.
+``` {r}
+bwplot(results1)
+```
+None of these models are great, but out of all of them, The random forest has the highest accuracy and the more compact Kappa range.
+
+    5.
+```{r}
+pred <- predict(forest_ranger1, df_test)
+#Evaluate the predictions
+cm <- confusionMatrix(data = pred, reference = df_test$sex, positive = "1")
+cm$overall[1]
+```
+
+7. Write a paragraph to summarize the section and give your comments on the results. 
+
+For both predictive models I ran, the random forest was the most effective machine learning classification algorithm. The dataset was better at predicting the high and low total cost than it was at predicting the sex of the patient. However, even though the best prediction for sex was only 57% accurate, the model is still better than nothing because the odds of guessing sex without any data is 50%. The model gives us a better chance at predicting sex. These models can me so much better if the train-test split was 70:30, but because of the time constraints, we had to limit the amount of data it took to train each model.
+
+-------
