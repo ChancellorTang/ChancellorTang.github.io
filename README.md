@@ -29,3 +29,7 @@
 [Click here to go to my Assignment 11](Assignment11.html) 
 
 [Click here to go to my Assignment 12](Assignment12.html) 
+
+[Click here to go to my Midterm Notebook](TOC-MidtermRmd.html)
+
+[Click here to go to my Midterm Presentation](PresentationMidterm.html)
