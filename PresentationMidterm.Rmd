@@ -108,4 +108,6 @@ knitr::opts_chunk$set(echo = FALSE)
 - Changing variables into factors
 - Lack of some variables
   - Service was no longer useful
+- RStudio and Github
+  -Error trying to push files to get
 
