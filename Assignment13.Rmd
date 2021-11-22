@@ -134,7 +134,7 @@ df %>%
     labs(y='Relative Frequency', x ='')
 ```
   
-  b.   Do sentiment analysis using `nrc` and `afinn` lexicons.  Give your comments on the results.
+  b. Do sentiment analysis using `nrc` and `afinn` lexicons.  Give your comments on the results.
   
 ```{r}
 df %>%
