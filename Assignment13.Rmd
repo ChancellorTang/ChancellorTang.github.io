@@ -35,7 +35,7 @@ knitr::opts_chunk$set(message = FALSE)
 ```{r}
 library(tidyverse)
 df = read_csv('netflix_titles.csv')
-df$century = ifelse(df$release_year >=2000, "20", "21")
+df$century = ifelse(df$release_year >=2000, "21", "20")
 ```
 
     - '21' if the released_year is greater or equal to 2000, and
@@ -206,6 +206,10 @@ cm$overall[1]
 ```
   
   b. Create variable century2 taking three following values. (Hint: You can use the case_when function to do this)
+  
+```{r}
+df$century2 = ifelse(df$release_year >=2000, "21", ifelse(df$release_year >=1950,"second_half_20", "first_half_20"))
+```
 
     - `21` if released_year is greater or equal to 2000
     
@@ -214,6 +218,42 @@ cm$overall[1]
     - `first_half_20` otherwise
     
   Predict century2 using the descriptions. Give the accuracy and plot the confusion matrix table. (Notice that the codes for 8 should still work for this question)
+  
+```{r}
+library(caret)
+library(themis)
+library(textrecipes)
+
+df2 <- df %>% 
+  mutate(target = type) %>% 
+  select(target, description)
+
+a <- recipe(target~description,
+       data = df2) %>% 
+  step_tokenize(description) %>% 
+  step_tokenfilter(description, max_tokens = 50) %>% 
+  step_tfidf(description) %>% 
+  step_normalize(all_numeric_predictors()) %>% 
+  step_smote(target) %>% 
+  prep()
+
+df2 <- juice(a)
+
+# Using Caret for modeling
+set.seed(2021)
+splitIndex <- createDataPartition(df2$target, p = .7, 
+                                  list = FALSE)
+df_train <- df2[ splitIndex,]
+df_test <- df2[-splitIndex,]
+
+forest_ranger <- train(target~., data=df_train, 
+                        method = "knn")
+
+pred <- predict(forest_ranger, df_test)
+
+cm <- confusionMatrix(data = pred, reference = df_test$target)
+cm$overall[1]
+```
 
 **6.** Create another categorical variable from the data and do the following
 
