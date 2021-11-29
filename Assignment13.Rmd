@@ -120,6 +120,9 @@ df %>%
 
   a. Is movies/TV Shows in the 21st century tends to be more positive than those in 20th century?  Use the sentiment analysis by `Bing` lexicons to address the question. 
 ```{r}
+library(tidyverse)
+library(tidytext)
+library(knitr)
 df %>%
     unnest_tokens(input = description, output = word) %>% 
     anti_join(get_stopwords()) %>% 
@@ -150,6 +153,7 @@ df %>%
     ggplot(aes(sentiment, n, fill=century))+geom_col(position = 'fill')+
     labs(y='Relative Frequency', x ='')
 ```
+
 ```{r}
 df %>%
     unnest_tokens(input = description, output = word) %>% 
@@ -176,14 +180,14 @@ library(textrecipes)
 
 # Select data and set target 
 df1 <- df %>% 
-  mutate(target = type) %>% 
+  mutate(target = century) %>% 
   select(target, description) 
 
 # Convert text data to numeric variables
 a <- recipe(target~description,
        data = df1) %>% 
   step_tokenize(description) %>% 
-  step_tokenfilter(description, max_tokens = 50) %>% 
+  step_tokenfilter(description, max_tokens = 10) %>% 
   step_tfidf(description) %>% 
   step_normalize(all_numeric_predictors()) %>% 
   step_smote(target) %>% 
@@ -204,7 +208,7 @@ cm <- confusionMatrix(data = pred, reference = df_test$target)
 cm$overall[1]
 ```
 ```{r}
-d = data.frame(pred = pred, obs = df_test$century)
+d = data.frame(pred = pred, obs = df_test$target)
 library(yardstick)
 d %>% conf_mat(pred, obs) %>% autoplot
 ```
@@ -235,7 +239,7 @@ df2 <- df %>%
 a <- recipe(target~description,
        data = df2) %>% 
   step_tokenize(description) %>% 
-  step_tokenfilter(description, max_tokens = 50) %>% 
+  step_tokenfilter(description, max_tokens = 10) %>% 
   step_tfidf(description) %>% 
   step_normalize(all_numeric_predictors()) %>% 
   step_smote(target) %>% 
@@ -250,13 +254,18 @@ splitIndex <- createDataPartition(df2$target, p = .7,
 df_train <- df2[ splitIndex,]
 df_test <- df2[-splitIndex,]
 
-forest_ranger <- train(target~., data=df_train, 
+knn2 <- train(target~., data=df_train, 
                         method = "knn")
 
-pred <- predict(forest_ranger, df_test)
+pred <- predict(knn2, df_test)
 
 cm <- confusionMatrix(data = pred, reference = df_test$target)
 cm$overall[1]
+```
+```{r}
+d = data.frame(pred = pred, obs = df_test$target)
+library(yardstick)
+d %>% conf_mat(pred, obs) %>% autoplot
 ```
 
 **6.** Create another categorical variable from the data and do the following
@@ -351,7 +360,7 @@ df3 <- df %>%
 a <- recipe(target~description,
        data = df3) %>% 
   step_tokenize(description) %>% 
-  step_tokenfilter(description, max_tokens = 50) %>% 
+  step_tokenfilter(description, max_tokens = 10) %>% 
   step_tfidf(description) %>% 
   step_normalize(all_numeric_predictors()) %>% 
   step_smote(target) %>% 
@@ -374,21 +383,132 @@ pred <- predict(knn, df_test)
 cm <- confusionMatrix(data = pred, reference = df_test$target)
 cm$overall[1]
 ```
-    
+```{r}
+d = data.frame(pred = pred, obs = df_test$target)
+library(yardstick)
+d %>% conf_mat(pred, obs) %>% autoplot
+```
+
 -------
 
 ### Animal Reviews Data
 
 **7.**  Download the animal reviews data at this [link](data/user_reviews.tsv).  Read the data using `read_tsv()` function.
+```{r}
+df1 = read_tsv("user_reviews.tsv")
+```
 
 **8.** Create a `rating` variable taking value `good` if the grade is greater than 7 and `bad` otherwise. 
+```{r}
+df1$rating = ifelse(df1$grade > 7, "good", "bad")
+```
 
 **9.** Do the follows. Notice that the text information is in the `text` variable. 
 
     - Plot side-by-side word frequency by different categories of the `rating` variable
+```{r}
+df1 %>%
+  unnest_tokens(input = text, output = word) %>% 
+  anti_join(get_stopwords()) %>% 
+  count(rating, word, sort = TRUE) %>% 
+  group_by(rating) %>%
+  slice_max(n, n = 10) %>% 
+  ungroup() %>%
+  mutate(word = reorder_within(word, by = n, within = rating)) %>%
+  ggplot(aes(n, word, fill = rating)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~rating, scales = "free") +
+  labs(x = "Frequency",
+       y = NULL)+
+  scale_y_reordered() 
+```
     
     - Plot word clouds on different categories of the `rating` variable
+
+```{r}
+df1 %>%
+  filter(rating == "good") %>%
+  unnest_tokens(input = text, output = word) %>% 
+  anti_join(get_stopwords()) %>% 
+  count(word, sort = TRUE) %>%
+  with(wordcloud(word, n, random.order = FALSE, max.words = 50, colors=pal))
+```
+```{r}
+df1 %>%
+  filter(rating == "bad") %>%
+  unnest_tokens(input = text, output = word) %>% 
+  anti_join(get_stopwords()) %>% 
+  count(word, sort = TRUE) %>%
+  with(wordcloud(word, n, random.order = FALSE, max.words = 50, colors=pal))
+```
     
     - Do sentiment analysis to compare different categories of the `rating` variable
-    
+
+```{r}
+df1 %>%
+    unnest_tokens(input = text, output = word) %>% 
+    anti_join(get_stopwords()) %>% 
+    count(rating, word, sort = TRUE) %>%
+    group_by(rating) %>% 
+    inner_join(get_sentiments("nrc")) %>%
+    filter(!is.na(sentiment)) %>%
+    count(sentiment, sort = TRUE) %>% 
+    group_by(rating) %>% 
+    mutate(n = n/sum(n)) %>% 
+    ggplot(aes(sentiment, n, fill=rating))+geom_col(position = 'fill')+
+    labs(y='Relative Frequency', x ='')
+```
+```{r}
+df1 %>%
+    unnest_tokens(input = text, output = word) %>% 
+    anti_join(get_stopwords()) %>% 
+    count(rating, word, sort = TRUE) %>%
+    group_by(rating) %>% 
+    inner_join(get_sentiments("afinn")) %>%
+    mutate(sentiment = value) %>% 
+    filter(!is.na(sentiment)) %>%
+    count(sentiment, sort = TRUE) %>% 
+    group_by(rating) %>% 
+    mutate(n = n/sum(n)) %>% 
+    ggplot(aes(rating, n, fill=factor(sentiment)))+geom_col(position = 'dodge')+
+    labs(y='Relative Frequency', fill = 'Sentiment', x = '')
+```
     - Predict the rating using the reviews (`text` variable). Give the accuracy and plot the confusion matrix table.
+
+```{r}
+df3 <- df1 %>% 
+  mutate(target = rating) %>% 
+  select(target, text)
+
+a <- recipe(target~text,
+       data = df3) %>% 
+  step_tokenize(text) %>% 
+  step_tokenfilter(text, max_tokens = 10) %>% 
+  step_tfidf(text) %>% 
+  step_normalize(all_numeric_predictors()) %>% 
+  step_smote(target) %>% 
+  prep()
+
+df2 <- juice(a)
+
+# Using Caret for modeling
+set.seed(2021)
+splitIndex <- createDataPartition(df2$target, p = .7, 
+                                  list = FALSE)
+df_train <- df2[ splitIndex,]
+df_test <- df2[-splitIndex,]
+
+knn <- train(target~., data=df_train, 
+                        method = "knn")
+
+pred <- predict(knn, df_test)
+
+cm <- confusionMatrix(data = pred, reference = df_test$target)
+cm$overall[1]
+```
+
+```{r}
+d = data.frame(pred = pred, obs = df_test$target)
+library(yardstick)
+d %>% conf_mat(pred, obs) %>% autoplot
+```
