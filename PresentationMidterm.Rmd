@@ -1,0 +1,113 @@
+---
+title: "Midterm Presentation"
+author: "Chancellor Tang"
+date: "11/10/2021"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+
+## Age and Cost by Sex
+
+
+![](graph1.png){width=70%}
+
+
+## Length of Stay vs Cost
+
+
+![](graph2.png){width=70%}
+
+
+## Provider Admissions
+
+
+![](graph3.png){width=70%}
+
+## Costs of Top Three Hospitals
+
+
+![](graph4.png){width=70%}
+
+## Percent of In State Patients
+
+
+![](graph5.png){width=70%}
+
+## Cost and Gender by Hospital
+
+
+![](graph6.png){width=70%}
+
+## Admission Type
+
+
+![](graph7.png){width=70%}
+
+## Rhode Island Hospital Payers
+
+
+![](graph8.png){width=70%}
+
+## Length of Stay and Hospital
+
+
+![](graph9.png){width=70%}
+
+## ER Admissions at Rhode Island Hospital
+
+
+![](graph10.png){width=70%}
+
+## Month-by-Month Admissions
+
+
+![](animate_graph.gif)
+
+## Cost Variable Importance
+
+
+![](var_imp.png)
+
+
+## Cost Tree K-Folds
+
+
+![](tree_depth.png)
+
+
+## Cost Model Comparison
+
+
+![](model_comp.png)
+
+
+## Gender Variable Importance
+
+
+![](var_imp1.png)
+
+
+## Gender Tree K-Folds
+
+
+![](tree_depth1.png)
+
+
+## Gender Model
+
+
+![](model_comp1.png)
+
+## Challenges
+
+- Changing variables into factors
+- Lack of some variables
+  - Service was no longer useful
+- RStudio and Github
+  -Error trying to push files to get
+

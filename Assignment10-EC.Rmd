@@ -31,7 +31,7 @@ knitr::opts_chunk$set(message = FALSE)
 ```{r}
 library(tidyverse)
 df = read_csv("adult.csv")
-sum(is.na(x))
+sum(is.na(df))
 df$income <- ifelse(df$income == ">50K", 1, 0)
 df$income = factor(df$income)
 df$sex = factor(df$sex)
@@ -80,14 +80,66 @@ cm2$overall[1]
 
 4. Download credit card default data at [this link](https://www.kaggle.com/uciml/default-of-credit-card-clients-dataset). Train and test a random forest to predict whether or not a customer has a default payment next month. What is the accuracy of the forest?
 
+``` {r}
+library(tidyverse)
+credit = read_csv("UCI_Credit_Card.csv")
+
+colnames(credit)[25] <- "target"
+
+library(randomForest)
+credit$target = factor(credit$target)
+
+library(caret)
+set.seed(2020)
+splitIndex <- createDataPartition(credit$target, p = .80, 
+                                  list = FALSE)
+credit_train <- credit[ splitIndex,]
+credit_test <- credit[-splitIndex,]
+
+rf <- train(target~., data=credit_train, 
+                method = "rf",
+                ntree = 10) 
+
+pred <- predict(rf, credit_test)
+cm <- confusionMatrix(data = pred, reference = credit_test$target, positive = "1")
+cm$overall[1]
+```
+
 5.  Sometime, the accuracy is not enough to evaluate a model. In this example, we notice that the model predicts the `not-default payment` very well which reflects through the high specificity (True Negative Rate), but predicts the `default payment` not very well reflecting through a low sensitivity (True Positive Rate). The balanced accuracy is the average of the sensitivity and specificity.  Use `cm$byClass[11]` to check the these metrics of the model. 
+```{r}
+cm$byClass[11]
+```
 
 6. The low specificity is due to the imbalanced distribution of the target variable.  Use `prop.table(table())` to check the imbalance of the target. 
+``` {r}
+prop.table(cm$byClass)
+```
 
 7. (Challenging) We want to improve the specificity of the model. To do that we first need to balance the training data so that there is a 50:50 distribution between the two classes (default and not default).  Do the follows to balance the training data
 
    - Split the original training data into 2 subsets.  Subset 1 contains default customers.  Subset 2 contains the remainders. Let n1, and n2 be the numbers of the rows in Subset 1 and 2 respectively. 
+
+```{r}
+pos_train = credit_train %>% filter(target == "1")
+neg_train = credit_train %>% filter(target == "0")
+n1 = nrow(pos_train)
+n2 = nrow(neg_train)
+```
    
    - Create a new training data contains Subset 1 and randomly n1 observations in Subset 2. You can use the `sample` functions to randomly select n1 observations in Subset 2. You can use the `rbind` function to merge two dataset by row. 
+``` {r}
+new_size = sample_n(neg_train, n1)
+new_train = rbind(pos_train,new_size)
+```
+   
    
    - Train a random forest on the new training data.  Calculate the specificity and balanced accuracy of the new model on the (same) testing data. 
+```{r}
+rf <- train(target~., data=new_train, 
+                method = "rf",
+                ntree = 10) 
+
+pred <- predict(rf, credit_test)
+cm <- confusionMatrix(data = pred, reference = credit_test$target, positive = "1")
+cm$overall[1]
+```
