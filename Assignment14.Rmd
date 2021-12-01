@@ -1,0 +1,298 @@
+
+---
+output: 
+  html_document:
+  pdf_document: default
+  word_document: default
+title: "Assignment 14: Twitters Mining with rtweet"
+---
+
+***How to do it?***: 
+
+- Open the Rmarkdown file of this assignment ([link](fa2021_assignment13.Rmd)) in Rstudio. 
+
+- Right under each **question**, insert  a code chunk (you can use the hotkey `Ctrl + Alt + I` to add a code chunk) and code the solution for the question. 
+
+- `Knit` the rmarkdown file (hotkey: `Ctrl + Alt + K`) to export an html.  
+
+-  Publish the html file to your Githiub Page. 
+
+***Submission***: Submit the link on Github of the assignment to Canvas
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE)
+```
+
+
+[Sample Codes](rtweet2.html)
+
+-------
+
+1. Pick a keyword or hashtag. Download the data associated with the keyword/hashtag. Plot at least 10 plots to visualize the data associated with the keyword/hashtag. All plots should have titles and captions.
+
+```{r}
+library(rtweet) 
+library(tidytext)
+library(ggpubr) 
+library(tidyverse) 
+library(knitr)
+library(lubridate)
+```
+
+```{}
+keyword_search = '#ForeverNE'
+
+df <- search_tweets(q = keyword_search, 
+                        n = 15000,
+                        include_rts = FALSE,
+                        `-filter` = "replies",
+                        lang = "en") %>% 
+  mutate(created_at = ymd_hms(format(created_at, tz = "US/Eastern")))
+  write_csv(df, 'twitter_patriots.csv')
+```
+
+```{r}
+df_pat = read_csv('twitter_patriots.csv')
+```
+
+```{r}
+library(knitr)
+library(tidytext)
+df_pat %>% 
+  unnest_tokens(input = text, output = word) %>% 
+  filter(!word %in% c("foreverne", "patriots", "https","t.co")) %>% 
+  anti_join(get_stopwords()) %>% 
+  count(word, sort = TRUE) %>% 
+  #filter(text != "foreverne") %>% 
+  head(10) %>% 
+  ggplot(aes(x = n, y = reorder(word, n))) +
+  geom_col() +
+  labs(y = '', x = 'Frequency', title ="Most-Used Words", caption = "The words 'Mac' and 'Jones' are used frequently, which is the name of the rookie QB of the Patriots.")
+```
+```{r}
+df_pat%>% 
+  unnest_tokens(output = hashtag, input = text, token = "tweets") %>%
+  filter(!hashtag %in% c("#foreverne", "#patriots"), str_detect(hashtag, "^#")) %>% 
+  count(hashtag, sort = TRUE) %>%
+  head(10) %>%
+  ggplot(aes(x = n, y = reorder(hashtag, n))) +
+  geom_col() +
+  labs(title = "Associated Hashtags", y = '', x = 'Frequency', caption = "The next most-used hashtag was 'NFL', which is the league the New England Patriots play in.")
+```
+```{r}
+library(RColorBrewer)
+
+pal <- brewer.pal(8,"Dark2")
+library(wordcloud) 
+
+df_pat %>% 
+  unnest_tokens(output = hashtag, input = text, token = "tweets") %>%
+  filter(!hashtag %in% c("#patriots",'#foreverne'), str_detect(hashtag, "^#")) %>%
+  count(hashtag, sort = TRUE) %>%
+  mutate(hashtag = str_remove(hashtag, '#')) %>% 
+  filter(hashtag != 'mufc') %>% 
+  with(wordcloud(hashtag, n, random.order = FALSE, max.words = 50, colors = pal))
+
+```
+```{r}
+df_pat %>% 
+  arrange(-favorite_count) %>%
+  head(5) %>% 
+  select(favorite_count, text, verified)
+```
+```{r}
+df_pat%>% 
+  unnest_tokens(mentions, text, "tweets", to_lower = FALSE) %>%
+  filter(str_detect(mentions, "^@")) %>%  
+  count(mentions, sort = TRUE) %>%
+  head(10) %>% 
+  ggplot(aes(x = n, y = reorder(mentions, n)))+
+  geom_col()+
+  labs(x = 'Frequency', y = '', title = "Top Mentions", caption = "@inletswetrust is a crypto company. I do not knwo what this has to do with the patriots to be 2nd most mentioned user")
+```
+```{r}
+df_pat %>% 
+  count(screen_name, sort = TRUE) %>%
+  head(5) %>% 
+  ggplot(aes(x = n, y = reorder(screen_name, n)))+
+  geom_col()+
+  labs(x = 'Frequency', y = '', title = "Top Tweeters", caption = "Ian Steele is the sports anchor out of ABC6 in Providence, and he tweets about the Patriots, who play 40 minutes from Providence.")
+```
+```{r}
+df_pat %>% 
+  count(source, sort = TRUE) %>%
+  head(5) %>% 
+  ggplot(aes(x = n, y = reorder(source, n)))+
+  geom_col()+
+  labs(x = 'Frequency', y = '', title = "Tweet Sources", caption = "Tweets about the Patriots mainly come from  mobile phones")
+```
+
+```{r}
+df_pat %>% 
+  filter(!is.na(country)) %>% 
+  count(country, sort = TRUE) %>%
+  head(5) %>% 
+  ggplot(aes(x = n, y = reorder(country, n)))+
+  geom_col()+
+  labs(x = 'Frequency', y = '',caption =  "This shows why every other country refers to football as 'American Football'", title = "Country")
+```
+
+```{r}
+df_pat %>% 
+  filter(!is.na(location), !location=='') %>% 
+  count(location, sort = TRUE) %>%
+  head(5) %>% 
+  ggplot(aes(x = n, y = reorder(location, n)))+
+  geom_col()+
+  labs(x = 'Frequency', y = '', title = "Tweet Locations", caption = "The Patriots have strong fanbases in Massachusetts, with Boston being their main supporting city")
+```
+
+```{r}
+df_pat %>%
+    unnest_tokens(input = text, output = word) %>% 
+    anti_join(get_stopwords()) %>% 
+    count(word, sort = TRUE) %>%
+    inner_join(get_sentiments("afinn")) %>%
+    filter(!is.na(value)) %>%
+    count(value, wt = n, sort = TRUE) %>% 
+    ggplot(aes(x= value, y = n))+geom_col()+
+    labs(y='Frequency', x ='', title = "Sentiment Analysis", caption = "Most of the tweets about the show are positive, which is because of their win last Sunday")
+```
+
+```{r}
+ts_plot(df_pat, "hours") +
+  labs(x = NULL, y = NULL,
+       title = "Frequency of Tweets",
+       caption = "Tweets with this hashtag spiked on 11/29/2021, the date of their last game") +
+  theme_minimal()
+```
+2. Choose a location then pick a trending keyword/hashtag in the location. Download the data associated with the keyword/hashtag. Plot at least 10 plots to visualize the data associated with the keyword/hashtag. All plots should have titles and captions. 
+
+```{r}
+trends_available()
+```
+```{r}
+get_trends('Miami')
+```
+
+```{}
+keyword_search = '#Hawkeye'
+
+df <- search_tweets(q = keyword_search, 
+                        n = 15000,
+                        include_rts = FALSE,
+                        `-filter` = "replies",
+                        lang = "en") %>% 
+  mutate(created_at = ymd_hms(format(created_at, tz = "US/Eastern")))
+
+write_csv(df, 'twitter_hawkeye.csv')
+```
+
+```{r}
+df_mcu = read_csv('twitter_hawkeye.csv')
+```
+
+```{r}
+df_mcu%>% 
+  unnest_tokens(output = hashtag, input = text, token = "tweets") %>%
+  filter(!hashtag %in% c("#hawkeye", "#hawkeyeseries"), str_detect(hashtag, "^#")) %>% 
+  count(hashtag, sort = TRUE) %>%
+  head(10) %>%
+  ggplot(aes(x = n, y = reorder(hashtag, n))) +
+  geom_col() +
+  labs(title = "Associated Hashtags", y = '', x = 'Frequency', caption = "The most used hashtag is 'Kate Bishop', the protaganist of the TV series")
+```
+
+```{r}
+library(RColorBrewer)
+
+pal <- brewer.pal(8,"Dark2")
+library(wordcloud) 
+
+df_mcu %>% 
+  unnest_tokens(output = hashtag, input = text, token = "tweets") %>%
+  filter(!hashtag %in% c("#hawkeye",'#hawkeyeseries'), str_detect(hashtag, "^#")) %>%
+  count(hashtag, sort = TRUE) %>%
+  mutate(hashtag = str_remove(hashtag, '#')) %>% 
+  filter(hashtag != 'mufc') %>% 
+  with(wordcloud(hashtag, n, random.order = FALSE, max.words = 50, colors = pal))
+```
+
+
+```{r}
+df_mcu%>% 
+  unnest_tokens(mentions, text, "tweets", to_lower = FALSE) %>%
+  filter(str_detect(mentions, "^@")) %>%  
+  count(mentions, sort = TRUE) %>%
+  head(10) %>% 
+  ggplot(aes(x = n, y = reorder(mentions, n)))+
+  geom_col()+
+  labs(x = 'Frequency', y = '', title = "Top Mentions", caption = "Besides Hailee Steinfeld and Jeremy Renner, the main actors in this series, Vincent D'onofrio is the third most mention person. He plays Kingpin in the Daredevil series, and people speculate he may appear in this series as well.")
+```
+
+```{r}
+df_mcu %>% 
+  count(screen_name, sort = TRUE) %>%
+  head(5) %>% 
+  ggplot(aes(x = n, y = reorder(screen_name, n)))+
+  geom_col()+
+  labs(x = 'Frequency', y = '', title = "Top Tweeters", caption = "Kidzcoolit and thereafter are fan accounts who are fans of the MCU, which Hawkeye is a part of.")
+```
+
+```{r}
+df_mcu %>% 
+  count(source, sort = TRUE) %>%
+  head(5) %>% 
+  ggplot(aes(x = n, y = reorder(source, n)))+
+  geom_col()+
+  labs(x = 'Frequency', y = '', title = "Tweet Sources", caption = "Tweets about Hawkeye mainly come from  mobile phones")
+```
+```{r}
+df_mcu %>% 
+  filter(!is.na(country)) %>% 
+  count(country, sort = TRUE) %>%
+  head(5) %>% 
+  ggplot(aes(x = n, y = reorder(country, n)))+
+  geom_col()+
+  labs(x = 'Frequency', y = '',caption =  "Since the MCU is a hollywood production, its main audience is in the US", title = "Country")
+```
+```{r}
+df_mcu %>% 
+  filter(!is.na(location), !location=='') %>% 
+  count(location, sort = TRUE) %>%
+  head(5) %>% 
+  ggplot(aes(x = n, y = reorder(location, n)))+
+  geom_col()+
+  labs(x = 'Frequency', y = '', title = "Tweet Locations", caption = "As previously stated, since Hawkeye is a Hollywood production, it is no surprise that LA has the most tweets for locations")
+```
+```{r}
+df_mcu %>%
+    unnest_tokens(input = text, output = word) %>% 
+    anti_join(get_stopwords()) %>% 
+    count(word, sort = TRUE) %>%
+    inner_join(get_sentiments("afinn")) %>%
+    filter(!is.na(value)) %>%
+    count(value, wt = n, sort = TRUE) %>% 
+    ggplot(aes(x= value, y = n))+geom_col()+
+    labs(y='Frequency', x ='', title = "Sentiment Analysis", caption = "Most of the tweets about the show are positive, which means that people are liking the show")
+```
+```{r}
+ts_plot(df_mcu, "hours") +
+  labs(x = NULL, y = NULL,
+       title = "Frequency of Tweets",
+       caption = "Tweets with this hashtag spiked this morning at like 3:00 am EST, which is when the most recent episode dropped") +
+  theme_minimal()
+```
+
+```{r}
+df_mcu %>%
+    unnest_tokens(input = text, output = word) %>% 
+    anti_join(get_stopwords()) %>% 
+    count(word, sort = TRUE) %>%
+    inner_join(get_sentiments("nrc")) %>%
+    filter(!is.na(sentiment)) %>%
+    count(sentiment, sort = TRUE) %>% 
+    mutate(n = n/sum(n)) %>% 
+    ggplot(aes(y= reorder(sentiment, n), x = n))+geom_col()+
+    labs(y='Relative Frequency', x ='', title = "Sentiment: NRC", caption = "The top emotional words are trust and fear, which may be two of the themes of the show")
+```
